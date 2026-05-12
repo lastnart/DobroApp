@@ -201,7 +201,7 @@ fun PensionerScreen(
                                 modifier = Modifier.weight(1f),
                                 icon = Icons.Default.CheckCircle,
                                 value = requests.count { it.status == RequestStatus.Completed }.toString(),
-                                label = "Выполнено",
+                                label = "Завершено",
                                 color = Secondary
                             )
                         }
