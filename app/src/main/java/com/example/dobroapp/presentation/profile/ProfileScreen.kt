@@ -79,6 +79,13 @@ fun ProfileScreen(
                         color = Color(0xFF7C3400)
                     )
                 },
+                navigationIcon = {
+                    if (profile?.role == UserRole.Pensioner) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад", tint = OnSurface)
+                        }
+                    }
+                },
                 actions = {
                     IconButton(onClick = onLogout) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Выйти", tint = Primary)
