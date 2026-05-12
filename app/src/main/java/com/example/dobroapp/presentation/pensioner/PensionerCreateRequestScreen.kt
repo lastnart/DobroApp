@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Home
@@ -106,7 +107,7 @@ fun PensionerCreateRequestScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Назад",
                             tint = OnSurface
                         )

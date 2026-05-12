@@ -105,6 +105,7 @@ fun PensionerScreen(
                 )
             )
         },
+        /*
         bottomBar = {
             NavigationBar(
                 containerColor = Color.White.copy(alpha = 0.95f),
@@ -124,22 +125,7 @@ fun PensionerScreen(
                         unselectedTextColor = Color(0xFF8A9BA8)
                     )
                 )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = {
-                        selectedTab = 1
-                        onCreateRequest()
-                    },
-                    icon = { Icon(Icons.Default.AddCircle, contentDescription = "Создать", modifier = Modifier.size(24.dp)) },
-                    label = { Text("Создать", fontSize = 11.sp, fontWeight = FontWeight.SemiBold) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF7C3400),
-                        selectedTextColor = Color(0xFF7C3400),
-                        indicatorColor = Color(0xFFFFE0D0),
-                        unselectedIconColor = Color(0xFF8A9BA8),
-                        unselectedTextColor = Color(0xFF8A9BA8)
-                    )
-                )
+
                 NavigationBarItem(
                     selected = selectedTab == 2,
                     onClick = {
@@ -158,6 +144,7 @@ fun PensionerScreen(
                 )
             }
         }
+         */
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -240,6 +227,27 @@ fun PensionerScreen(
                                 fontWeight = FontWeight.Bold
                             )
                         }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        // Profile button
+                        Button(
+                            onClick = onProfile,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(54.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = SecondaryContainer,
+                                contentColor = OnSecondaryContainer
+                            )
+                        ) {
+                            Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "Профиль",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -283,13 +291,13 @@ fun PensionerScreen(
                             )
                             Text(
                                 text = "Заявок пока нет",
-                                fontSize = 16.sp,
+                                fontSize = 18.sp,
                                 color = OnSurfaceVariant,
                                 textAlign = TextAlign.Center
                             )
                             Text(
                                 text = "Нажмите «Создать новый запрос»\nчтобы попросить о помощи",
-                                fontSize = 14.sp,
+                                fontSize = 16.sp,
                                 color = OnSurfaceVariant.copy(alpha = 0.7f),
                                 textAlign = TextAlign.Center,
                                 lineHeight = 20.sp
