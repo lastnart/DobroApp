@@ -58,7 +58,7 @@ import com.example.dobroapp.presentation.pensioner.PensionerCreateRequestScreen
 
 private object Routes {
     const val Role = "role"
-    const val Pensioner = "com/example/dobroapp/presentation/pensioner/dashboard"
+    const val Pensioner = "pensioner/dashboard"
     const val Volunteer = "volunteer/dashboard"
     const val Wallet = "wallet"
     const val Rewards = "rewards"
@@ -182,113 +182,7 @@ fun DobroAppRoot() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PensionerScreen(
-    vm: RequestsViewModel,
-    onBack: () -> Unit,
-    onLeaderboard: () -> Unit,
-    onProfile: () -> Unit,
-    onRate: (String) -> Unit
-) {
-    val requests by vm.myRequests.collectAsState()
-    var title by rememberSaveable { mutableStateOf("") }
-    var district by rememberSaveable { mutableStateOf("Центральный") }
-    var address by rememberSaveable { mutableStateOf("") }
-    var time by rememberSaveable { mutableStateOf("") }
-    var comment by rememberSaveable { mutableStateOf("") }
-    var rewardCoinsText by rememberSaveable { mutableStateOf("30") }
-    var type by rememberSaveable { mutableStateOf(HelpType.Groceries) }
 
-    Scaffold(
-        topBar = { AppTopBar(title = stringResource(R.string.title_pensioner), onBack = onBack) }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item { Button(onClick = onLeaderboard) { Text(stringResource(R.string.btn_leaderboard)) } }
-                    item { Button(onClick = onProfile) { Text(stringResource(R.string.btn_profile)) } }
-                }
-            }
-            item { Text(stringResource(R.string.btn_create_request), style = MaterialTheme.typography.titleMedium) }
-            item { OutlinedTextField(title, { title = it }, label = { Text(stringResource(R.string.label_title)) }, modifier = Modifier.fillMaxWidth()) }
-            item { OutlinedTextField(district, { district = it }, label = { Text(stringResource(R.string.label_district)) }, modifier = Modifier.fillMaxWidth()) }
-            item { OutlinedTextField(address, { address = it }, label = { Text(stringResource(R.string.label_address)) }, modifier = Modifier.fillMaxWidth()) }
-            item { OutlinedTextField(time, { time = it }, label = { Text(stringResource(R.string.label_time)) }, modifier = Modifier.fillMaxWidth()) }
-            item { OutlinedTextField(comment, { comment = it }, label = { Text(stringResource(R.string.label_comment)) }, modifier = Modifier.fillMaxWidth()) }
-            item {
-                OutlinedTextField(
-                    value = rewardCoinsText,
-                    onValueChange = { rewardCoinsText = it.filter(Char::isDigit).take(4) },
-                    label = { Text(stringResource(R.string.label_reward_coins)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(HelpType.entries) { chipType ->
-                        FilterChip(selected = chipType == type, onClick = { type = chipType }, label = { Text(chipType.title) })
-                    }
-                }
-            }
-            item {
-                Button(
-                    onClick = {
-                        vm.createRequest(title = title, rewardCoins = rewardCoinsText.toIntOrNull() ?: 30, district = district, address = address, time = time, comment = comment, helpType = type)
-                        title = ""; address = ""; time = ""; comment = ""
-                    },
-                    enabled = title.isNotBlank() && address.isNotBlank() && time.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text(stringResource(R.string.btn_publish_request)) }
-            }
-            item { Text(stringResource(R.string.label_my_requests), style = MaterialTheme.typography.titleMedium) }
-            if (requests.isEmpty()) {
-                item { Text(stringResource(R.string.msg_empty)) }
-            } else {
-                items(requests) { request ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(request.title, style = MaterialTheme.typography.titleSmall)
-                            Text("${request.district} • ${request.time}")
-                            Text(stringResource(R.string.label_type, request.helpType.title))
-                            Text(stringResource(R.string.label_reward_coins_value, request.rewardCoins))
-                            Text(stringResource(R.string.label_status, request.status.toRuStatus()))
-                            if (request.status == RequestStatus.InProgress) {
-                                Button(onClick = { onRate(request.id) }, modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                                    Text(stringResource(R.string.btn_complete_request), textAlign = TextAlign.Center)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun WalletScreen(vm: WalletViewModel, navController: NavHostController) {
-    val balance by vm.balance.collectAsState()
-    val rank by vm.rank.collectAsState()
-    val transactions by vm.transactions.collectAsState()
-    Scaffold(topBar = { AppTopBar(title = stringResource(R.string.title_wallet), onBack = { navController.popBackStack() }) }) { padding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            item { Text(stringResource(R.string.label_balance, balance), style = MaterialTheme.typography.headlineSmall) }
-            item { Text(stringResource(R.string.label_rank, rank)) }
-            if (transactions.isEmpty()) {
-                item { Text(stringResource(R.string.msg_empty)) }
-            } else {
-                items(transactions) { tx ->
-                    Card { Column(Modifier.padding(12.dp)) { Text("${tx.amount} монет"); Text(tx.reason); Text(tx.createdAt) } }
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -320,25 +214,6 @@ private fun LeaderboardScreen(vm: LeaderboardViewModel, navController: NavHostCo
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ProfileScreen(vm: ProfileViewModel, navController: NavHostController) {
-    val profile by vm.profile.collectAsState()
-    Scaffold(topBar = { AppTopBar(title = stringResource(R.string.title_profile), onBack = { navController.popBackStack() }) }) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            profile?.let {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(it.fullName, style = MaterialTheme.typography.titleLarge)
-                        Text(if (it.role == UserRole.Pensioner) "Пенсионер" else "Волонтер")
-                        Text(stringResource(R.string.label_active_requests, it.activeRequests))
-                        Text(stringResource(R.string.label_completed_requests, it.completedRequests))
-                    }
-                }
-            } ?: Text(stringResource(R.string.msg_empty))
-        }
-    }
-}
 
 @Composable
 private fun RateDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
