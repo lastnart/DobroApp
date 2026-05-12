@@ -101,18 +101,7 @@ fun VolunteerScreen(
 
     Scaffold(
         containerColor = Surface,
-        bottomBar = {
-            DobroBottomNav(
-                selectedTab = selectedTab,
-                onTabSelected = { tab ->
-                    selectedTab = tab
-                    when (tab) {
-                        2 -> onWallet()
-                        3 -> onProfile()
-                    }
-                }
-            )
-        }
+
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -425,8 +414,8 @@ fun DobroBottomNav(
     ) {
         val tabs = listOf(
             Triple("Лента", Icons.Default.Favorite, 0),
-            Triple("Кошелек", Icons.Default.AccountBalanceWallet, 2),
-            Triple("Профиль", Icons.Default.Person, 3)
+            Triple("Кошелек", Icons.Default.AccountBalanceWallet, 1),
+            Triple("Профиль", Icons.Default.Person, 2)
         )
         tabs.forEach { (label, icon, index) ->
             NavigationBarItem(

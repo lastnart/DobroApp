@@ -38,6 +38,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.dobroapp.R
@@ -51,10 +52,11 @@ import com.example.dobroapp.presentation.profile.ProfileViewModel
 import com.example.dobroapp.presentation.requests.RequestsViewModel
 import com.example.dobroapp.presentation.rewards.RewardsViewModel
 import com.example.dobroapp.presentation.volunteer.VolunteerScreen
+import com.example.dobroapp.presentation.volunteer.DobroBottomNav
 import com.example.dobroapp.presentation.wallet.WalletViewModel
+import com.example.dobroapp.presentation.wallet.WalletScreen
 import org.koin.androidx.compose.koinViewModel
 import com.example.dobroapp.presentation.pensioner.PensionerCreateRequestScreen
-
 
 private object Routes {
     const val Role = "role"
@@ -67,7 +69,6 @@ private object Routes {
     const val Rate = "rate/{requestId}"
     const val RateTemplate = "rate/%s"
     const val CreateRequest = "pensioner/create"
-
 }
 
 @Composable
@@ -93,106 +94,161 @@ fun DobroAppRoot() {
         }
     }
 
-    NavHost(navController = navController, startDestination = Routes.Role) {
-        composable(Routes.Role) {
-            RoleScreen(
-                onRoleSelected = { role, fullName -> authViewModel.signIn(role, fullName) },
-                sessionRole = session?.role,
-                isLoading = isLoading,
-                errorMessage = authError
-            ) { role ->
-                navController.navigate(if (role == UserRole.Pensioner) Routes.Pensioner else Routes.Volunteer) {
-                    launchSingleTop = true
-                    popUpTo(Routes.Role) { inclusive = false }
+    // Получаем текущий маршрут для отображения нижнего бара
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    // Проверяем, является ли текущий экран частью раздела волонтера
+    val isVolunteerSection = session?.role == UserRole.Volunteer && currentRoute in listOf(
+        Routes.Volunteer, Routes.Wallet, Routes.Profile
+    )
+
+    Scaffold(
+        bottomBar = {
+            if (isVolunteerSection) {
+                // Используем существующий DobroBottomNav
+                // Используем существующий DobroBottomNav
+                var selectedTab by rememberSaveable { mutableStateOf(0) }
+
+// Определяем выбранную вкладку по текущему маршруту
+                selectedTab = when (currentRoute) {
+                    Routes.Volunteer -> 0
+                    Routes.Wallet -> 1   // Индекс 2 для кошелька
+                    Routes.Profile -> 2  // Индекс 3 для профиля
+                    else -> 0
                 }
+
+                DobroBottomNav(
+                    selectedTab = selectedTab,
+                    onTabSelected = { tabIndex ->
+                        when (tabIndex) {
+                            0 -> {
+                                navController.navigate(Routes.Volunteer) {
+                                    popUpTo(Routes.Volunteer) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                            1 -> {  // Кошелек - индекс 2
+                                navController.navigate(Routes.Wallet) {
+                                    popUpTo(Routes.Volunteer) { saveState = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                            2 -> {  // Профиль - индекс 3
+                                navController.navigate(Routes.Profile) {
+                                    popUpTo(Routes.Volunteer) { saveState = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
+                    }
+                )
             }
         }
-        composable(Routes.Pensioner) {
-            com.example.dobroapp.presentation.pensioner.PensionerScreen(
-                vm = requestsViewModel,
-                userName = session?.fullName ?: "",
-                onCreateRequest = { navController.navigate(Routes.CreateRequest) },
-                onProfile = { navController.navigate(Routes.Profile) },
-                onRate = { requestId -> navController.navigate(Routes.RateTemplate.format(requestId)) }
-            )
-        }
-        composable(Routes.Volunteer) {
-            VolunteerScreen(
-                vm = requestsViewModel,
-                onBack = {
-                    authViewModel.signOut()
-                    navController.navigate(Routes.Role) {
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Routes.Role,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable(Routes.Role) {
+                RoleScreen(
+                    onRoleSelected = { role, fullName -> authViewModel.signIn(role, fullName) },
+                    sessionRole = session?.role,
+                    isLoading = isLoading,
+                    errorMessage = authError
+                ) { role ->
+                    navController.navigate(if (role == UserRole.Pensioner) Routes.Pensioner else Routes.Volunteer) {
                         launchSingleTop = true
-                        popUpTo(Routes.Role) { inclusive = true }
-                    }
-                },
-                onWallet = { navController.navigate(Routes.Wallet) },
-                onRewards = { navController.navigate(Routes.Rewards) },
-                onLeaderboard = { navController.navigate(Routes.Leaderboard) },
-                onProfile = { navController.navigate(Routes.Profile) }
-            )
-        }
-
-        composable(Routes.Wallet) {
-            com.example.dobroapp.presentation.wallet.WalletScreen(
-                vm = walletViewModel,
-                onBack = { navController.popBackStack() }
-            )
-        }
-        composable(Routes.Rewards) {
-            RewardsScreen(rewardsViewModel, navController)
-        }
-        composable(Routes.Leaderboard) {
-            LeaderboardScreen(leaderboardViewModel, navController)
-        }
-        composable(Routes.Profile) {
-            com.example.dobroapp.presentation.profile.ProfileScreen(
-                vm = profileViewModel,
-                onBack = { navController.popBackStack() },
-                onLogout = {
-                    authViewModel.signOut()
-                    navController.navigate(Routes.Role) {
-                        launchSingleTop = true
-                        popUpTo(Routes.Role) { inclusive = true }
+                        popUpTo(Routes.Role) { inclusive = false }
                     }
                 }
-            )
-        }
-        composable(
-            route = Routes.Rate,
-            arguments = listOf(navArgument("requestId") { type = NavType.StringType })
-        ) { entry ->
-            val requestId = entry.arguments?.getString("requestId").orEmpty()
-            RateDialog(
-                onDismiss = { navController.popBackStack() },
-                onConfirm = { rating ->
-                    requestsViewModel.completeRequest(requestId, rating)
-                    navController.popBackStack()
-                }
-            )
-        }
-        composable(Routes.CreateRequest) {
-            com.example.dobroapp.presentation.pensioner.PensionerCreateRequestScreen(
-                vm = requestsViewModel,
-                onBack = { navController.popBackStack() }
-            )
-        }
+            }
 
+            composable(Routes.Pensioner) {
+                com.example.dobroapp.presentation.pensioner.PensionerScreen(
+                    vm = requestsViewModel,
+                    userName = session?.fullName ?: "",
+                    onCreateRequest = { navController.navigate(Routes.CreateRequest) },
+                    onProfile = { navController.navigate(Routes.Profile) },
+                    onRate = { requestId -> navController.navigate(Routes.RateTemplate.format(requestId)) }
+                )
+            }
 
+            composable(Routes.Volunteer) {
+                VolunteerScreen(
+                    vm = requestsViewModel,
+                    onBack = { /* Не используется */ },
+                    onWallet = { /* Удалено - навигация через нижний бар */ },
+                    onRewards = { /* Удалено - навигация через нижний бар */ },
+                    onLeaderboard = { /* Удалено - навигация через нижний бар */ },
+                    onProfile = { /* Удалено - навигация через нижний бар */ }
+                )
+            }
+
+            composable(Routes.Wallet) {
+                WalletScreen(
+                    vm = walletViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Routes.Rewards) {
+                RewardsScreen(rewardsViewModel, navController)
+            }
+
+            composable(Routes.Leaderboard) {
+                LeaderboardScreen(leaderboardViewModel, navController)
+            }
+
+            composable(Routes.Profile) {
+                com.example.dobroapp.presentation.profile.ProfileScreen(
+                    vm = profileViewModel,
+                    onBack = { navController.popBackStack() },
+                    onLogout = {
+                        authViewModel.signOut()
+                        navController.navigate(Routes.Role) {
+                            launchSingleTop = true
+                            popUpTo(Routes.Role) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.Rate,
+                arguments = listOf(navArgument("requestId") { type = NavType.StringType })
+            ) { entry ->
+                val requestId = entry.arguments?.getString("requestId").orEmpty()
+                RateDialog(
+                    onDismiss = { navController.popBackStack() },
+                    onConfirm = { rating ->
+                        requestsViewModel.completeRequest(requestId, rating)
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(Routes.CreateRequest) {
+                PensionerCreateRequestScreen(
+                    vm = requestsViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
     }
 }
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RewardsScreen(vm: RewardsViewModel, navController: NavHostController) {
     val rewards by vm.rewards.collectAsState()
-    Scaffold(topBar = { AppTopBar(title = stringResource(R.string.title_rewards), onBack = { navController.popBackStack() }) }) { padding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(rewards) { reward ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp)) { Text(reward.title, style = MaterialTheme.typography.titleSmall); Text("${reward.category} • ${reward.cost} монет") }
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(rewards) { reward ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp)) {
+                    Text(reward.title, style = MaterialTheme.typography.titleSmall)
+                    Text("${reward.category} • ${reward.cost} монет")
                 }
             }
         }
@@ -203,17 +259,18 @@ private fun RewardsScreen(vm: RewardsViewModel, navController: NavHostController
 @Composable
 private fun LeaderboardScreen(vm: LeaderboardViewModel, navController: NavHostController) {
     val items by vm.items.collectAsState()
-    Scaffold(topBar = { AppTopBar(title = stringResource(R.string.title_leaderboard), onBack = { navController.popBackStack() }) }) { padding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(items) { entry ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp)) { Text(entry.volunteerName, style = MaterialTheme.typography.titleSmall); Text("${entry.district} • ${entry.coins} монет"); Text(entry.rankTitle) }
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(items) { entry ->
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp)) {
+                    Text(entry.volunteerName, style = MaterialTheme.typography.titleSmall)
+                    Text("${entry.district} • ${entry.coins} монет")
+                    Text(entry.rankTitle)
                 }
             }
         }
     }
 }
-
 
 @Composable
 private fun RateDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
