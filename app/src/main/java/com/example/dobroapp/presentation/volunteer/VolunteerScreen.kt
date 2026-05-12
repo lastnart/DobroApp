@@ -425,7 +425,6 @@ fun DobroBottomNav(
     ) {
         val tabs = listOf(
             Triple("Лента", Icons.Default.Favorite, 0),
-            Triple("Запросы", Icons.Default.List, 1),
             Triple("Кошелек", Icons.Default.AccountBalanceWallet, 2),
             Triple("Профиль", Icons.Default.Person, 3)
         )
